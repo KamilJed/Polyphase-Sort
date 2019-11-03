@@ -15,19 +15,23 @@ public class Tape {
     private int writeMark = 0;
     private int pagesRead = 0;
     private int pagesWritten = 0;
+    private int pageSize;
+    private File tape;
 
     public Tape(String tapeName, int pageSize){
+        this(pageSize);
         try{
-            File f = new File(tapeName);
-            f.createNewFile();
-            inputStream = new FileInputStream(f);
-            outputStream = new FileOutputStream(f);
+            tape = new File(tapeName);
+            tape.createNewFile();
         }
-        catch (IOException e){
+        catch (IOException e) {
             System.out.println("ERROR! Couldn't create tape: " + tapeName);
         }
-        readBuffer = new byte[pageSize];
-        writeBuffer = new byte[pageSize];
+    }
+
+    public Tape(File tapeFile, int pageSize){
+        this(pageSize);
+        tape = tapeFile;
     }
 
     public Record getNextRecord(){
@@ -46,7 +50,26 @@ public class Tape {
     }
 
     public void flush(){
-        savePage();
+        if(writeMark > 0)
+            savePage();
+
+        try {
+            if(outputStream != null)
+                outputStream.close();
+            outputStream = null;
+        }
+        catch (IOException e){
+            e.printStackTrace();
+            System.out.println("ERROR closing stream");
+        }
+    }
+
+    public void print(){
+        Tape t = new Tape(tape, pageSize);
+        Record r;
+        System.out.println("[DEBUG INFO] PRINTING TAPE: " + tape.getName());
+        while((r = t.getNextRecord()) != null)
+            System.out.println(r);
     }
 
     public int getPagesWritten() {
@@ -57,13 +80,34 @@ public class Tape {
         return pagesRead;
     }
 
+    public void delete(){
+        tape.delete();
+    }
+
+    private Tape(int pageSize){
+        readBuffer = new byte[pageSize];
+        writeBuffer = new byte[pageSize];
+        this.pageSize = pageSize;
+    }
+
     private double getNextDouble(){
         boolean hasNext = true;
         if(readMark == readBuffer.length || bytesRead == 0)
             hasNext = getNextPage();
 
-        if(!hasNext)
+        if(!hasNext){
+            try{
+                if(inputStream != null)
+                    inputStream.close();
+                inputStream = null;
+                bytesRead = 0;
+            }
+            catch (IOException e){
+                e.printStackTrace();
+                System.out.println("ERROR closing stream");
+            }
             return Double.POSITIVE_INFINITY;
+        }
 
         double value = ByteBuffer.wrap(readBuffer, readMark, Double.BYTES).getDouble();
         readMark += Double.BYTES;
@@ -75,6 +119,9 @@ public class Tape {
 
     private boolean getNextPage(){
         try{
+            if(inputStream == null)
+                inputStream = new FileInputStream(tape);
+
             readMark = 0;
             int bytes = inputStream.read(readBuffer);
             if(bytes > 0){
@@ -103,6 +150,9 @@ public class Tape {
 
     private void savePage(){
         try{
+            if(outputStream == null)
+                outputStream = new FileOutputStream(tape);
+
             if(writeMark != writeBuffer.length)
                 fillBuffer();
             outputStream.write(writeBuffer);
