@@ -45,12 +45,9 @@ public class AppMain {
 //        tape.flush();
 
         DataSetGenerator generator = new DataSetGenerator("dataSet");
-        generator.generateDataSet(100);
+        generator.generateDataSet(10);
 
         Sorter sorter = new Sorter("dataSet", 3*8, true);
         sorter.sort();
-
-        Sorter sorter1 = new Sorter("dataSet", 3*8, true);
-        sorter1.sort();
     }
 }

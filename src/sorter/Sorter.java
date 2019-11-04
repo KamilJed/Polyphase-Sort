@@ -127,6 +127,9 @@ public class Sorter {
 
         tapes[mergeTapeIndex].flush();
         mergePhases++;
+        System.out.println("--------------------");
+        for(Tape t : tapes)
+            t.print();
         if(cur1 != null)
             return mergeTapes(mergeTapeIndex, tape1Index, tape2Index, cur1);
         else{

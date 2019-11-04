@@ -17,6 +17,8 @@ public class Tape {
     private int pagesWritten = 0;
     private int pageSize;
     private File tape;
+    private boolean printMode = false;
+    private boolean empty = true;
 
     public Tape(String tapeName, int pageSize){
         this(pageSize);
@@ -44,6 +46,7 @@ public class Tape {
     }
 
     public void saveRecord(Record record){
+        empty = false;
         saveDouble(record.getProbabilityOfA());
         saveDouble(record.getProbabilityOfB());
         saveDouble(record.getProbabilityOfUnion());
@@ -65,11 +68,38 @@ public class Tape {
     }
 
     public void print(){
-        Tape t = new Tape(tape, pageSize);
-        Record r;
+//        Tape t = new Tape(tape, pageSize);
+//        Record r;
         System.out.println("[DEBUG INFO] PRINTING TAPE: " + tape.getName());
-        while((r = t.getNextRecord()) != null)
-            System.out.println(r);
+        if(empty)
+            return;
+        printMode = true;
+//        while((r = t.getNextRecord()) != null)
+//            System.out.println(r);
+        if(inputStream == null) {
+            try {
+                inputStream = new BufferedInputStream(new FileInputStream(tape));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                System.out.println("ERROR creating stream");
+                printMode = false;
+                return;
+            }
+        }
+        inputStream.mark(0);
+        if(inputStream.markSupported()){
+            Record r;
+            while((r = getNextRecord()) != null)
+                System.out.println(r);
+
+            try {
+                inputStream.reset();
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("ERROR reseting input stream. Tape corrupted");
+            }
+        }
+        printMode = false;
     }
 
     public int getPagesWritten() {
@@ -78,6 +108,10 @@ public class Tape {
 
     public int getPagesRead() {
         return pagesRead;
+    }
+
+    public boolean isEmpty() {
+        return empty;
     }
 
     public void delete(){
@@ -96,10 +130,13 @@ public class Tape {
             hasNext = getNextPage();
 
         if(!hasNext){
+            if(!printMode)
+                empty = true;
             try{
-                if(inputStream != null)
+                if(inputStream != null && !printMode){
                     inputStream.close();
-                inputStream = null;
+                    inputStream = null;
+                }
                 bytesRead = 0;
             }
             catch (IOException e){
@@ -120,7 +157,7 @@ public class Tape {
     private boolean getNextPage(){
         try{
             if(inputStream == null)
-                inputStream = new FileInputStream(tape);
+                inputStream = new BufferedInputStream(new FileInputStream(tape));
 
             readMark = 0;
             int bytes = inputStream.read(readBuffer);
