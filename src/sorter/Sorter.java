@@ -49,8 +49,11 @@ public class Sorter {
         }
         System.out.println("Number of disk reads: " + pagesRead);
         System.out.println("Number of disk writes: " + pagesWritten);
-        for(Tape t : tapes)
-            t.delete();
+        for(int i = 0; i < tapes.length; i++)
+            if(i != sortedTapeIndex){
+                tapes[i].delete();
+            }
+
     }
 
     private int distribute(){
@@ -162,7 +165,9 @@ public class Sorter {
     private boolean debugQuestion(String phase){
         System.out.println("[DEBUG INFO]Do you want to print files after " + phase + " [y/n]");
         Scanner scanner = new Scanner(System.in);
-        String answer = scanner.nextLine();
+        String answer = "n";
+        if(scanner.hasNextLine())
+            answer = scanner.nextLine();
         return answer.toLowerCase().toCharArray()[0] == 'y';
     }
 }

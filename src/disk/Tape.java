@@ -68,14 +68,10 @@ public class Tape {
     }
 
     public void print(){
-//        Tape t = new Tape(tape, pageSize);
-//        Record r;
         System.out.println("[DEBUG INFO] PRINTING TAPE: " + tape.getName());
         if(empty)
             return;
         printMode = true;
-//        while((r = t.getNextRecord()) != null)
-//            System.out.println(r);
         if(inputStream == null) {
             try {
                 inputStream = new BufferedInputStream(new FileInputStream(tape));
@@ -86,6 +82,13 @@ public class Tape {
                 return;
             }
         }
+
+        byte[] buffBakcup = new byte[readBuffer.length];
+        int readMarkBackup = readMark;
+        int bytesReadBackup = bytesRead;
+        int pagesReadBackup = pagesRead;
+        System.arraycopy(readBuffer, 0, buffBakcup, 0, readBuffer.length);
+
         inputStream.mark(0);
         if(inputStream.markSupported()){
             Record r;
@@ -100,6 +103,10 @@ public class Tape {
             }
         }
         printMode = false;
+        readMark = readMarkBackup;
+        bytesRead = bytesReadBackup;
+        pagesRead = pagesReadBackup;
+        System.arraycopy(buffBakcup, 0, readBuffer, 0, readBuffer.length);
     }
 
     public int getPagesWritten() {
