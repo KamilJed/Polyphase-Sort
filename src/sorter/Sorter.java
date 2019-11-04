@@ -38,10 +38,17 @@ public class Sorter {
             if(debugQuestion("merging")){
                 for(Tape t : tapes)
                     t.print();
-                System.out.println("Number of phases: " + mergePhases);
-                System.out.println("Sorted tape: tape" + sortedTapeIndex);
             }
         }
+        System.out.println("Number of phases: " + mergePhases);
+        System.out.println("Sorted tape: tape" + sortedTapeIndex);
+        int pagesRead = 0, pagesWritten = 0;
+        for(Tape t : tapes){
+            pagesRead += t.getPagesRead();
+            pagesWritten += t.getPagesWritten();
+        }
+        System.out.println("Number of disk reads: " + pagesRead);
+        System.out.println("Number of disk writes: " + pagesWritten);
         for(Tape t : tapes)
             t.delete();
     }
@@ -127,9 +134,13 @@ public class Sorter {
 
         tapes[mergeTapeIndex].flush();
         mergePhases++;
-        System.out.println("--------------------");
-        for(Tape t : tapes)
-            t.print();
+        if(debug){
+            if(debugQuestion("merging phase " + mergePhases)){
+                System.out.println("--------------------");
+                for(Tape t : tapes)
+                    t.print();
+            }
+        }
         if(cur1 != null)
             return mergeTapes(mergeTapeIndex, tape1Index, tape2Index, cur1);
         else{
