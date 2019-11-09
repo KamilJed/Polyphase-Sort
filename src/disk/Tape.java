@@ -109,7 +109,7 @@ public class Tape {
         System.arraycopy(buffBakcup, 0, readBuffer, 0, readBuffer.length);
     }
 
-    public int getPagesWritten() {
+        public int getPagesWritten() {
         return pagesWritten;
     }
 

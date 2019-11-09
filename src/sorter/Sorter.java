@@ -13,6 +13,7 @@ public class Sorter {
     private boolean debug;
     private int curTape;
     private int mergePhases = 0;
+    private int runs = 0;
 
     public Sorter(String fileName, int pageSize, boolean debug){
         this.pageSize = pageSize;
@@ -29,7 +30,6 @@ public class Sorter {
             if(debugQuestion("distribution")){
                 for(Tape t : tapes)
                     t.print();
-                System.out.println("DUMMMY RUNS: " + dummyRuns);
             }
         }
         Record cur = eliminateDummys(dummyRuns, curTape ^ 1, 2);
@@ -40,20 +40,36 @@ public class Sorter {
                     t.print();
             }
         }
-        System.out.println("Number of phases: " + mergePhases);
-        System.out.println("Sorted tape: tape" + sortedTapeIndex);
         int pagesRead = 0, pagesWritten = 0;
         for(Tape t : tapes){
             pagesRead += t.getPagesRead();
             pagesWritten += t.getPagesWritten();
         }
-        System.out.println("Number of disk reads: " + pagesRead);
-        System.out.println("Number of disk writes: " + pagesWritten);
         for(int i = 0; i < tapes.length; i++)
             if(i != sortedTapeIndex){
                 tapes[i].delete();
             }
-
+            else{
+                if(!file.delete()){
+                    System.out.println("ERROR! Couldn't delete file: " + file.getName());
+                }
+                else{
+                    Tape sortedFile = new Tape(file, pageSize);
+                    Record r;
+                    while((r = tapes[i].getNextRecord()) != null)
+                        sortedFile.saveRecord(r);
+                    sortedFile.flush();
+                    tapes[i].delete();
+                    sortedFile.print();
+                    sortedFile.flush();
+                }
+            }
+        System.out.println("DUMMMY RUNS: " + dummyRuns);
+        System.out.println("REAL RUNS: " + (runs + 1));
+        System.out.println("Number of phases: " + mergePhases);
+        System.out.println("Number of disk reads: " + pagesRead);
+        System.out.println("Number of disk writes: " + pagesWritten);
+        System.out.println("Number of disk operations: " + (pagesRead + pagesWritten));
     }
 
     private int distribute(){
@@ -61,6 +77,7 @@ public class Sorter {
         Record curRecord;
         Record prevRecord = null;
         Record[] lastRecord = {null, null};
+        boolean coaelescented = false;
         curTape = 0;
         int lastWritten = 0;
         int[] fibonacci = {1, 0};
@@ -68,7 +85,11 @@ public class Sorter {
         while((curRecord = distTape.getNextRecord()) != null){
             if(prevRecord != null){
                 if(curRecord.compareTo(prevRecord) < 0){
-                    fibCounter--;
+                    if(!coaelescented) {
+                        fibCounter--;
+                        runs++;
+                    }
+                    coaelescented = false;
                     if(fibCounter == 0){
                         fibonacci[curTape] += fibonacci[curTape ^ 1];
                         fibCounter = fibonacci[curTape];
@@ -78,7 +99,7 @@ public class Sorter {
             }
 
             if(curTape != lastWritten && lastRecord[curTape] != null && lastRecord[curTape].compareTo(curRecord) <= 0)
-                fibCounter++;
+                coaelescented = true;
             tapes[curTape].saveRecord(curRecord);
             lastWritten = curTape;
             lastRecord[curTape] = curRecord;
@@ -103,6 +124,8 @@ public class Sorter {
         boolean run1 = false, run2 = false;
         if(cur2 == null)
             cur2 = tapes[tape2Index].getNextRecord();
+        if(cur2 == null)
+            return tape1Index;
 
         cur1 = tapes[tape1Index].getNextRecord();
 

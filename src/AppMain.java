@@ -7,12 +7,13 @@ import java.util.Scanner;
 
 
 public class AppMain {
+    static boolean debug = false;
+    static boolean mainLoop = true;
     public static void main(String[] args) {
 
-        boolean mainLoop = true;
         while(mainLoop){
             printInfo();
-            mainLoop = processInput();
+            processInput();
         }
     }
 
@@ -22,14 +23,15 @@ public class AppMain {
         System.out.println("Type m to manually type in records to sort");
         System.out.println("Type e to sort binary file of your choice");
         System.out.println("Type f to read and display binary file");
+        System.out.println("Type d to change debug setting (currently debug = " + debug + ")");
         System.out.println("Type q to exit");
     }
 
-    private static boolean processInput(){
+    private static void processInput(){
         Scanner scanner = new Scanner(System.in);
         String input = scanner.nextLine();
         if(input == null || input.isEmpty())
-            return true;
+            return;
 
         switch (input.toLowerCase().toCharArray()[0]){
             case 'r':
@@ -44,20 +46,24 @@ public class AppMain {
             case 'f':
                 displayBinaryFile();
                 break;
+            case 'd':
+                debug = !debug;
+                break;
             case 'q':
-                return false;
+                mainLoop = false;
                 default:
         }
-        return true;
     }
 
     private static void generateAndSort(){
         System.out.println("Type in the number of records to generate and sort");
         Scanner scanner = new Scanner(System.in);
         int number = scanner.nextInt();
+        System.out.println("Type in the page size");
+        int pageSize = scanner.nextInt() * 8;
         DataSetGenerator generator = new DataSetGenerator("dataSet");
-        generator.generateDataSet(number);
-        AppMain.sort("dataSet", 0);
+        generator.generateDataSet(number, pageSize);
+        AppMain.sort("dataSet", pageSize);
     }
 
     private static void typeAndSort(){
@@ -92,8 +98,12 @@ public class AppMain {
         System.out.println("Type in file to display");
         Scanner scanner = new Scanner(System.in);
         String fileName = scanner.nextLine();
+        displayBinaryFile(fileName);
+    }
+
+    private static void displayBinaryFile(String fileName){
         File file = new File(fileName);
-        Tape tape = new Tape(file, 10*8);
+        Tape tape = new Tape(file, 3*8);
         Record r;
         System.out.println(fileName + " contents:");
         while((r = tape.getNextRecord()) != null)
@@ -106,7 +116,9 @@ public class AppMain {
             Scanner scanner = new Scanner(System.in);
             pageSize = scanner.nextInt() * 8;
         }
-        Sorter sorter = new Sorter(fileName, pageSize, true);
+        displayBinaryFile(fileName);
+        Sorter sorter = new Sorter(fileName, pageSize, debug);
         sorter.sort();
+        mainLoop = false;
     }
 }
